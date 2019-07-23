@@ -1,0 +1,37 @@
+#!/bin/bash
+# Print a version string.
+# 1: Path to the version file
+# 2: Prefix for the last tag used to describe the version eg: longomatch-*
+scriptversion=2014-12-02.19; # UTC
+
+# Avoid meddling by environment variable of the same name.
+file=$1
+
+# Read the version from the file
+IFS='' read -r line < ${file}
+v=$line
+
+# Recreate the number of commits and append it to the version from the file.
+vcommit=`git log -n 1 --pretty=format:%H -- $file`
+commit_list=`git rev-list "$vcommit"..HEAD 2>/dev/null` \
+    || { commit_list=failed;
+         echo "WARNING: git rev-list failed" 1>&2; }
+
+if [[ "x$commit_list" = "x" ]]; then
+    numcommits="0"
+else 
+    numcommits=`echo "$commit_list" | wc -l`
+fi
+current_commit_hash=`git rev-parse --short=7 HEAD`
+
+shortVersion=`echo "$v"."$numcommits" | tr -d '[:space:]'`
+longVersion=`echo "$shortVersion"-"$current_commit_hash"`
+
+if [[ "$1" = *"MobileVersion"* ]]; then
+    v=$shortVersion
+else 
+    v=$longVersion
+fi
+
+# Omit the trailing newline, so that m4_esyscmd can use the result directly.
+printf %s "$v"
