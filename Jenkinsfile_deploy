@@ -1,0 +1,45 @@
+pipeline {
+  agent none
+  environment {
+    HOME = '/tmp'
+  }
+  stages {
+    stage('Test and deploy') {
+      parallel {
+        stage('Docker') {
+          agent {
+            docker {
+              image 'microsoft/dotnet:2.2-sdk'
+            }
+          }
+          stages {
+            stage('Run tests') {
+              steps {
+                sh 'dotnet test . -l:trx'
+              }
+              post {
+                always {
+                  mstest(testResultsFile: 'MessageBroker.Tests/TestResults/*.trx')
+                }
+              }
+            }
+            stage('Generate nupkg') {
+              steps {
+                sh 'dotnet pack -c Release MessageBroker/MessageBroker.csproj /p:Version=$(./git-version-gen Version.txt)'
+                archiveArtifacts 'MessageBroker/bin/Release/MessageBroker.*.nupkg'
+              }
+            }
+            stage('Push nupkg') {
+              environment {
+                NUGET_API_KEY = credentials("nuget-api-key")
+              }
+              steps {
+                sh "dotnet nuget push MessageBroker/bin/Release/MessageBroker.*.nupkg -k $NUGET_API_KEY -s $NUGET_SERVER"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
