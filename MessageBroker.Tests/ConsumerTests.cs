@@ -8,6 +8,7 @@ using Moq;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -52,7 +53,8 @@ namespace MessageBroker.Tests
 			await The_consumer_starts ();
 
 			// Assert
-			kafkaConsumer.Verify (kc => kc.Subscribe (It.IsAny<string> ()), Times.Once);
+			var topics = new List<string> { "NotificationsMicroservices", "OtterNotificationsMicroservices" };
+			kafkaConsumer.Verify (kc => kc.Subscribe (It.Is<IEnumerable<string>> (t => t.SequenceEqual (topics))), Times.Once);
 			kafkaConsumer.Verify (kc => kc.Consume (It.IsAny<CancellationToken> ()), Times.Once);
 			kafkaConsumer.Verify (kc => kc.Commit (It.IsAny<ConsumeResult<Ignore, string>> ()), Times.Once);
 		}
@@ -67,7 +69,8 @@ namespace MessageBroker.Tests
 			await The_consumer_starts ();
 
 			// Assert
-			kafkaConsumer.Verify (kc => kc.Subscribe (It.IsAny<string> ()), Times.Once);
+			var topics = new List<string> { "NotificationsMicroservices", "OtterNotificationsMicroservices" };
+			kafkaConsumer.Verify (kc => kc.Subscribe (It.Is<IEnumerable<string>> (t => t.SequenceEqual (topics))), Times.Once);
 			kafkaConsumer.Verify (kc => kc.Consume (It.IsAny<CancellationToken> ()), Times.Once);
 			Then_an_error_has_been_logged<JsonSerializationException> ();
 		}
@@ -82,7 +85,7 @@ namespace MessageBroker.Tests
 			await The_consumer_starts ();
 
 			// Assert
-			kafkaConsumer.Verify (kc => kc.Subscribe (It.IsAny<string> ()), Times.Once);
+			kafkaConsumer.Verify (kc => kc.Subscribe (It.IsAny<IEnumerable<string>> ()), Times.Once);
 			kafkaConsumer.Verify (kc => kc.Consume (It.IsAny<CancellationToken> ()), Times.Once);
 			Then_an_error_has_been_logged<ArgumentNullException> ();
 		}
@@ -97,7 +100,8 @@ namespace MessageBroker.Tests
 			await The_consumer_starts ();
 
 			// Assert
-			kafkaConsumer.Verify (kc => kc.Subscribe (It.IsAny<string> ()), Times.Once);
+			var topics = new List<string> { "NotificationsMicroservices", "OtterNotificationsMicroservices" };
+			kafkaConsumer.Verify (kc => kc.Subscribe (It.Is<IEnumerable<string>> (t => t.SequenceEqual (topics))), Times.Once);
 			kafkaConsumer.Verify (kc => kc.Consume (It.IsAny<CancellationToken> ()), Times.Once);
 			Then_an_error_has_been_logged<KeyNotFoundException> ();
 		}
@@ -113,7 +117,7 @@ namespace MessageBroker.Tests
 			await The_consumer_starts ();
 
 			// Assert
-			kafkaConsumer.Verify (kc => kc.Subscribe (It.IsAny<string> ()), Times.Once);
+			kafkaConsumer.Verify (kc => kc.Subscribe (It.IsAny<IEnumerable<string>> ()), Times.Once);
 			kafkaConsumer.Verify (kc => kc.Consume (It.IsAny<CancellationToken> ()), Times.Once);
 			Then_an_error_has_been_logged<InvalidCastException> ();
 		}
@@ -178,7 +182,7 @@ namespace MessageBroker.Tests
 			var config = new EventConsumerConfiguration {
 				Server = "kafkaserver",
 				GroupId = "groupId",
-				Topics = new List<string> { "NotificationsMicroservices" }
+				Topics = new List<string> { "NotificationsMicroservices", "NotificationsMicroservices", "OtterNotificationsMicroservices" }
 			};
 			config.RegisterConsumer<ValidEvent, ValidEventHandler> ();
 			config.Handlers[Utils.INVALID_EVENT_NAME] = typeof (InvalidEventHandler);

@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -41,14 +42,9 @@ namespace MessageBroker.Infrastructure
 
 		protected override async Task ExecuteAsync (CancellationToken cancellationToken)
 		{
-			List<Task> tasks = new List<Task> ();
-
-			foreach (var topic in options.Topics) {
-				consumerFactory.GetConsumer ().Subscribe (topic);
-				tasks.Add (Consume (cancellationTokenSource.Token));
-			}
-
-			await Task.WhenAll (tasks);
+			var topics = options.Topics.Distinct ();
+			consumerFactory.GetConsumer ().Subscribe (topics);
+			await Consume (cancellationTokenSource.Token);
 		}
 
 		public override Task StartAsync (CancellationToken cancellationToken)
