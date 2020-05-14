@@ -36,7 +36,33 @@ We also have added this section to our **AppSettings.json** file:
 }
 ```
 
-Checkout the https://github.com/riftgg/lobby-auth-service/blob/develop/AuthService.Api/Startup.cs class to follow the example.
+This is an example of the Startup.cs class configuring a Consumer:
+
+```
+    public void ConfigureServices(IServiceCollection services)
+    {
+        ...
+
+        ConfigureMessageBroker (services);
+        ConfigureEventHandlers (services);
+
+        ...
+    }
+
+    void ConfigureMessageBroker (IServiceCollection services)
+    {
+        services.Configure<EventConsumerConfiguration> (Configuration.GetSection ("MessageBrokerConsumer"));
+        services.PostConfigure<EventConsumerConfiguration> (options => {
+            options.RegisterConsumer<UserRegisteredEvent, UserRegisteredEventHandler> ();
+        });
+        services.AddSingleton<IHostedService, Consumer> ();
+    }
+
+    void ConfigureEventHandlers (IServiceCollection services)
+    {
+        services.AddTransient<UserRegisteredEventHandler> ();
+    }
+```
 
 
 ### Producer
@@ -72,7 +98,24 @@ var @event = new UserRegisteredEvent {
 await messageBrokerProducer.Send (@event, "NotificationsMicroservices");
 ```
 
-Checkout the https://github.com/riftgg/lobby-notifications-service/blob/develop/LobbyNotificationsService.Api/Startup.cs class to follow the example.
+This is an example of the Startup.cs class configuring a Producer:
+
+```
+    public void ConfigureServices(IServiceCollection services)
+    {
+        ...
+
+        ConfigureMessageBroker (services);
+
+        ...
+    }
+
+    void ConfigureMessageBroker (IServiceCollection services)
+    {
+        services.Configure<EventProducerConfiguration> (Configuration.GetSection ("MessageBrokerProducer"));
+        services.AddTransient<IProducer, Producer> ();
+    }
+```
 
 
 ### Local usage
