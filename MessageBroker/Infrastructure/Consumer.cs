@@ -42,6 +42,7 @@ namespace MessageBroker.Infrastructure
 
 		protected override async Task ExecuteAsync (CancellationToken cancellationToken)
 		{
+			await Task.Yield ();
 			var topics = options.Topics.Distinct ();
 			consumerFactory.GetConsumer ().Subscribe (topics);
 			await Consume (cancellationTokenSource.Token);
